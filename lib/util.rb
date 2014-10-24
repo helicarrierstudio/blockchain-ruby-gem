@@ -5,7 +5,7 @@ end
 
 BASE_URL = "https://blockchain.info/"
 
-def call_api(resource, method = 'get', data = nil)
+def call_api(resource, method: 'get', data: nil)
 	url = URI.parse(BASE_URL + resource)
 	http = Net::HTTP.new(url.host, url.port)
 	http.use_ssl = true
