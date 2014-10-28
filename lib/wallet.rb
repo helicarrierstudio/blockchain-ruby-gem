@@ -127,7 +127,7 @@ class Wallet
 		return params
 	end
 	
-	#convenience method that parses a string into json AND makes sure there are no errors
+	# convenience method that parses a response into json AND makes sure there are no errors
 	def parse_json(response)
 		json_response = JSON.parse(response)
 		error = json_response['error']
