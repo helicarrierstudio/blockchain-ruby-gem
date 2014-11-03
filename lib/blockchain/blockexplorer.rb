@@ -60,7 +60,15 @@ module Blockchain
 		response = Blockchain::call_api(resource, method: 'get', data: params)
 		return JSON.parse(response)['blocks'].map{ |b| SimpleBlock.new(b) }
 	end
-
+	
+	def self.get_latest_block(api_code = nil)
+		params = {}
+		if !api_code.nil? then params['api_code'] = api_code end
+		resource = 'latestblock'
+		response = Blockchain::call_api(resource, method: 'get', data: params)
+		return LatestBlock.new(JSON.parse(response))
+	end
+	
 	def self.get_inventory_data(hash, api_code = nil)
 		params = { 'format' => 'json' }
 		if !api_code.nil? then params['api_code'] = api_code end
