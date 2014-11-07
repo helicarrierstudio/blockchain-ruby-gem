@@ -6,11 +6,13 @@ module Blockchain
 	end
 
 	BASE_URL = "https://blockchain.info/"
-
+	TIMEOUT_SECONDS = 10
+	
 	def self.call_api(resource, method: 'get', data: nil)
 		url = URI.parse(BASE_URL + resource)
 		http = Net::HTTP.new(url.host, url.port)
 		http.use_ssl = true
+		http.read_timeout = TIMEOUT_SECONDS
 		
 		request = nil
 		if method == 'get'
