@@ -44,7 +44,7 @@ Params:
 recipients : dictionary - dictionary with the structure of 'address':amount
 from_address : str - specific address to send from (optional, keyword)
 fee : int - transaction fee in satoshi. Must be greater than default (optional, keyword)
-note : str - public note to include with the transaction (optional, keyword)
+note : str - public note to include with the transaction if amount >= 0.005 BTC (optional, keyword)
 ```
 
 Usage:
