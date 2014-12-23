@@ -18,7 +18,6 @@ module Blockchain
 			attr_reader :trade_volume_usd
 			attr_reader :difficulty
 			attr_reader :minutes_between_blocks
-			attr_reader :days_destroyed
 			attr_reader :number_of_transactions
 			attr_reader :hash_rate
 			attr_reader :timestamp
@@ -41,7 +40,6 @@ module Blockchain
 			@trade_volume_usd = s['trade_volume_usd']
 			@difficulty = s['difficulty']
 			@minutes_between_blocks = s['minutes_between_blocks']
-			@days_destroyed = s['days_destroyed']
 			@number_of_transactions = s['n_tx']
 			@hash_rate = s['hash_rate']
 			@timestamp = s['timestamp']
