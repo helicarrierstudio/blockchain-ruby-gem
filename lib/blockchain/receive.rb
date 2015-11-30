@@ -61,7 +61,6 @@ module Blockchain
 			params = { 'xpub' => xpub, 'callback' => callback, 'key' => api_key }
 			resp = Blockchain::call_api('v2/receive', method: 'get', data: params, base_url: 'https://api.blockchain.info/')
 			json_resp = JSON.parse(resp)
-			p json_resp
 			receive_response = ReceiveResponse.new(json_resp['address'],
 													json_resp['index'],
 													json_resp['callback'])
