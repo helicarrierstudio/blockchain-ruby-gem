@@ -73,7 +73,7 @@ module Blockchain
 			resp = Blockchain::call_api('v2/receive/callback_log', method: 'get', data: params, base_url: 'https://api.blockchain.info/')
 			json_resp = JSON.parse(resp)
 			receive_response = json_resp.map do |entry|
-				LogEntry.new(entry['callback_url'],
+				LogEntry.new(entry['callback'],
 							entry['called_at'],
 							entry['raw_response'],
 							entry['response_code'])
