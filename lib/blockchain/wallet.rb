@@ -5,11 +5,12 @@ module Blockchain
 
 	class Wallet
 
-		def initialize(identifier, password, second_password = nil, api_code = nil)
+		def initialize(identifier, password, url, second_password = nil, api_code = nil)
 			@identifier = identifier
 			@password = password
 			@second_password = second_password
 			@api_code = api_code
+			@url = url
 		end
 		
 		def send(to, amount, from_address: nil, fee: nil, note: nil)
@@ -40,7 +41,7 @@ module Blockchain
 				params['note'] = note
 			end
 			
-			response = Blockchain::call_api("merchant/#{@identifier}/#{method}", method: 'post', data: params)
+			response = Blockchain::call_api("merchant/#{@identifier}/#{method}", method: 'post', data: params, base_url: @url)
 			json_response = parse_json(response)
 			return PaymentResponse.new(
 										json_response['message'],

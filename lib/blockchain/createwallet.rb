@@ -3,7 +3,7 @@ require_relative 'util'
 
 module Blockchain
 
-	def self.create_wallet(password, api_code, priv: nil, label: nil, email: nil)
+	def self.create_wallet(password, api_code, url, priv: nil, label: nil, email: nil)
 
 		params = { 'password' => password, 'api_code' => api_code }
 		
@@ -17,7 +17,7 @@ module Blockchain
 			params['email'] = email
 		end
 		
-		response = Blockchain::call_api('api/v2/create_wallet', method: 'post', data: params)
+		response = Blockchain::call_api('api/v2/create', method: 'post', data: params, base_url: url)
 		json_response = JSON.parse(response)
 		return CreateWalletResponse.new(json_response['guid'],
 										json_response['address'],
