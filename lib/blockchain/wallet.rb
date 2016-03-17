@@ -111,14 +111,6 @@ module Blockchain
 			return json_response['active']
 		end
 		
-		def consolidate(days)
-			params = build_basic_request()
-			params['days'] = days
-			response = Blockchain::call_api("merchant/#{@identifier}/auto_consolidate", method: 'post', data: params)
-			json_response = parse_json(response)
-			return json_response['consolidated']
-		end
-		
 		def build_basic_request()
 			params = { 'password' => @password }
 			if !@second_password.nil?
