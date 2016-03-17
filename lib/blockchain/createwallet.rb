@@ -21,18 +21,18 @@ module Blockchain
 		json_response = JSON.parse(response)
 		return CreateWalletResponse.new(json_response['guid'],
 										json_response['address'],
-										json_response['link'])
+										json_response['label'])
 	end
 
 	class CreateWalletResponse
 		attr_reader :identifier
 		attr_reader :address
-		attr_reader :link
+		attr_reader :label
 
-		def initialize(identifier, address, link)
+		def initialize(identifier, address, label)
 			@identifier = identifier
 			@address = address
-			@link = link
+			@label = label
 		end
 	end
 
