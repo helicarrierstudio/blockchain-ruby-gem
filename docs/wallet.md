@@ -6,6 +6,7 @@ Constructor params:
 ```
 identifier : str
 password : str
+url : str
 second_password : str (optional)
 api_code : str (optional)
 ```
@@ -14,7 +15,7 @@ Usage:
 ```ruby
 require 'blockchain'
 
-wallet = Blockchain::Wallet.new('ada4e4b6-3c9f-11e4-baad-164230d1df67', 'password123')
+wallet = Blockchain::Wallet.new('ada4e4b6-3c9f-11e4-baad-164230d1df67', 'password123', 'http://localhost:3000/')
 ```
 
 ####`send`

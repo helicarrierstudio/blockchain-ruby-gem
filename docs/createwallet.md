@@ -7,6 +7,7 @@ Params:
 ```
 password : str - password for the new wallet. At least 10 characters.
 api_code : str - API code with the create wallets permission
+url : str - URL for an instance of service-my-wallet
 priv : str - private key to add to the wallet (optional, keyword)
 label : str - label for the first address in the wallet (optional, keyword)
 email : str - email to associate with the new wallet (optional, keyword)
@@ -16,5 +17,5 @@ Usage:
 ```ruby
 require 'blockchain'
 
-wallet = Blockchain::create_wallet('1234password', '58ck39ajuiw', label: 'Test wallet')
+wallet = Blockchain::create_wallet('1234password', '58ck39ajuiw', 'http://localhost:3000/', label: 'Test wallet')
 ```
