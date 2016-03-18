@@ -17,6 +17,8 @@ $ cd api-v1-client-ruby
 $ rake install
 ```
 
+To use the `wallet` and `createwallet` functionality, you'll also need an instance of [service-my-wallet][my-wallet].
+
 The gem consists of the following functionality:
 
 * `blockexplorer` ([docs](docs/blockexplorer.md)) ([api/blockchain_api][api1])
@@ -48,6 +50,7 @@ In order to prevent abuse some API methods require an API key approved with some
 
 The same API key can be used to bypass the request limiter.
 
+[my-wallet]: https://github.com/blockchain/service-my-wallet-v3
 [api1]: https://blockchain.info/api/blockchain_api
 [api2]: https://blockchain.info/api/create_wallet
 [api3]: https://blockchain.info/api/exchange_rates_api

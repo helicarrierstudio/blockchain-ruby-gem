@@ -5,14 +5,14 @@ module Blockchain
 	class APIException < StandardError
 	end
 
-	BASE_URL = "https://blockchain.info/"
+	BASE_URL = 'https://blockchain.info/'
 	TIMEOUT_SECONDS = 10
 	
 	def self.call_api(resource, method: 'get', data: nil, base_url: nil)
 		base_url ||= BASE_URL
 		url = URI.parse(base_url + resource)
 		http = Net::HTTP.new(url.host, url.port)
-		http.use_ssl = true
+		http.use_ssl = base_url.start_with? 'https://'
 		http.read_timeout = TIMEOUT_SECONDS
 		
 		request = nil
