@@ -18,18 +18,6 @@ module Blockchain
 		end
 	end
 
-	def self.receive(dest_addr, callback, api_code = nil)
-		params = { 'method' => 'create', 'address' => dest_addr, 'callback' => callback }
-		if !api_code.nil? then params['api_code'] = api_code end
-		resp = Blockchain::call_api('api/receive', method: 'post', data: params)
-		json_resp = JSON.parse(resp)
-		receive_response = ReceiveResponse.new(json_resp['fee_percent'],
-												json_resp['destination'],
-												json_resp['input_address'],
-												json_resp['callback_url'])
-		return receive_response
-	end
-
 	module V2
 		class ReceiveResponse
 			attr_reader :address
