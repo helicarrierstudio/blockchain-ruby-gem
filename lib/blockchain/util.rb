@@ -9,7 +9,6 @@ module Blockchain
 	TIMEOUT_SECONDS = 10
 	
 	def self.call_api(resource, method: 'get', data: nil, base_url: nil)
-		puts base_url
 		base_url ||= BASE_URL
 		url = URI.parse(base_url + resource)
 		http = Net::HTTP.new(url.host, url.port)
@@ -28,8 +27,6 @@ module Blockchain
 		
 		response = http.request(request)
 		if response.code != '200'
-			puts response.code
-			puts url.to_s
 			raise APIException, response.body
 		end
 		return response.body
