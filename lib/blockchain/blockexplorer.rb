@@ -1,80 +1,169 @@
 require 'json'
-require_relative 'util'
+require_relative 'client'
 
 module Blockchain
 
-	def self.get_block(block_id, api_code = nil)
-		params = api_code.nil? ? { } : { 'api_code' => api_code }
-		resource = 'rawblock/' + block_id
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return Block.new(JSON.parse(response))
-	end
+    MAX_TRANSACTIONS_PER_REQUEST = 50
+    MAX_TRANSACTIONS_PER_MULTI_REQUEST = 100
+    DEFAULT_UNSPENT_TRANSACTIONS_PER_REQUEST = 250
 
-	def self.get_tx(tx_id, api_code = nil)
-		params = api_code.nil? ? { } : { 'api_code' => api_code }
-		resource = 'rawtx/' + tx_id
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return Transaction.new(JSON.parse(response))
-	end
+    class BlockExplorer
+
+        attr_reader :client
+
+        def initialize(base_url = nil, api_code = nil)
+            @client = Client.new(base_url, api_code)
+        end
+
+        def proxy(method_name, *args)
+            warn "[DEPRECATED] avoid use of static methods, use an instance of BlockExplorer class instead."
+            send(method_name, *args)
+        end
+
+        # Deprecated. Please use get_block_by_hash whenever possible.
+        def get_block_by_index(index)
+            warn "[DEPRECATED] `get_block_by_index` is deprecated. Please use `get_block_by_hash` whenever possible."
+            return get_block(index.to_s)
+        end
+
+        def get_block_by_hash(block_hash)
+            return get_block(block_hash)
+        end
+
+        # Deprecated. Please use get_tx_by_hash whenever possible.
+        def get_tx_by_index(tx_index)
+            warn "[DEPRECATED] `get_tx_by_index` is deprecated. Please use `get_tx_by_hash` whenever possible."
+            return get_tx(tx_index.to_s)
+        end
+
+        def get_tx_by_hash(tx_hash)
+            return get_tx(tx_hash)
+        end
+
+        def get_block_height(height)
+            params = { 'format' => 'json' }
+            resource = "block-height/#{height}"
+            response = @client.call_api(resource, method: 'get', data: params)
+            return JSON.parse(response)['blocks'].map{ |b| Block.new(b) }
+        end
+
+        def get_address_by_hash160(address, limit = MAX_TRANSACTIONS_PER_REQUEST,
+                                    offset = 0, filter = FilterType::REMOVE_UNSPENDABLE)
+            return get_address(address, limit, offset, filter)
+        end
+
+        def get_address_by_base58(address, limit = MAX_TRANSACTIONS_PER_REQUEST,
+                                    offset = 0, filter = FilterType::REMOVE_UNSPENDABLE)
+            return get_address(address, limit, offset, filter)
+        end
+
+        def get_xpub(xpub, limit = MAX_TRANSACTIONS_PER_MULTI_REQUEST,
+                    offset = 0, filter = FilterType::REMOVE_UNSPENDABLE)
+            params = { 'active' => xpub, 'format' => 'json', 'limit' => limit, 'offset' => offset, 'filter' => filter }
+            resource = 'multiaddr'
+            response = @client.call_api(resource, method: 'get', data: params)
+            return Xpub.new(JSON.parse(response))
+        end
+
+        def get_multi_address(address_array, limit = MAX_TRANSACTIONS_PER_MULTI_REQUEST,
+                                offset = 0, filter = FilterType::REMOVE_UNSPENDABLE)
+            params = { 'active' => address_array.join("|"), 'format' => 'json', 'limit' => limit, 'offset' => offset, 'filter' => filter }
+            resource = 'multiaddr'
+            response = @client.call_api(resource, method: 'get', data: params)
+            return MultiAddress.new(JSON.parse(response))
+        end
+
+        def get_unspent_outputs(address_array,
+                                limit = DEFAULT_UNSPENT_TRANSACTIONS_PER_REQUEST,
+                                confirmations = 0)
+            params = { 'active' => address_array.join("|"), 'limit' => limit, 'confirmations' => confirmations }
+            resource = 'unspent'
+            response = @client.call_api(resource, method: 'get', data: params)
+            return JSON.parse(response)['unspent_outputs'].map{ |o| UnspentOutput.new(o) }
+        end
+
+        def get_latest_block()
+            resource = 'latestblock'
+            response = @client.call_api(resource, method: 'get')
+            return LatestBlock.new(JSON.parse(response))
+        end
+
+        def get_unconfirmed_tx()
+            params = { 'format' => 'json' }
+            resource = 'unconfirmed-transactions'
+            response = @client.call_api(resource, method: 'get', data: params)
+            return JSON.parse(response)['txs'].map{ |t| Transaction.new(t) }
+        end
+
+        def get_blocks(time = nil, pool_name = nil)
+            params = { 'format' => 'json' }
+            resource = "blocks/"
+            if !time.nil?
+                resource += time.to_s
+            elsif !pool_name.nil?
+                resource += pool_name
+            end
+            response = @client.call_api(resource, method: 'get', data: params)
+            return JSON.parse(response)['blocks'].map{ |b| SimpleBlock.new(b) }
+        end
+
+        private
+        def get_block(hash_or_index)
+            resource = 'rawblock/' + hash_or_index
+            response = @client.call_api(resource, method: 'get')
+            return Block.new(JSON.parse(response))
+        end
+
+        private
+        def get_tx(hash_or_index)
+            resource = 'rawtx/' + hash_or_index
+            response = @client.call_api(resource, method: 'get')
+            return Transaction.new(JSON.parse(response))
+        end
+
+        private
+        def get_address(address, limit = MAX_TRANSACTIONS_PER_REQUEST,
+                        offset = 0, filter = FilterType::REMOVE_UNSPENDABLE)
+            params = { 'format' => 'json', 'limit' => limit, 'offset' => offset, 'filter' => filter }
+            resource = 'rawaddr/' + address
+            response = @client.call_api(resource, method: 'get', data: params)
+            return Address.new(JSON.parse(response))
+        end
+    end
+
+    def self.get_block(hash_or_index, api_code = nil)
+        Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__, hash_or_index)
+    end
+
+    def self.get_tx(hash_or_index, api_code = nil)
+        Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__, hash_or_index)
+    end
 
 	def self.get_block_height(height, api_code = nil)
-		params = { 'format' => 'json' }
-		if !api_code.nil? then params['api_code'] = api_code end
-		resource = "block-height/#{height}"
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return JSON.parse(response)['blocks'].map{ |b| Block.new(b) }
+		Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__, height)
 	end
 
-	def self.get_address(address, api_code = nil)
-		params = api_code.nil? ? { } : { 'api_code' => api_code }
-		resource = 'rawaddr/' + address
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return Address.new(JSON.parse(response))
-	end
+    def self.get_address(address, api_code = nil,
+                        limit = MAX_TRANSACTIONS_PER_REQUEST, offset = 0,
+                        filter = FilterType::REMOVE_UNSPENDABLE)
+        Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__, address, limit, offset, filter)
+    end
 
-	def self.get_unspent_outputs(address, api_code = nil)
-		params = { 'active' => address }
-		if !api_code.nil? then params['api_code'] = api_code end
-		resource = 'unspent'
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return JSON.parse(response)['unspent_outputs'].map{ |o| UnspentOutput.new(o) }
+	def self.get_unspent_outputs(address_array, api_code = nil,
+                                limit = DEFAULT_UNSPENT_TRANSACTIONS_PER_REQUEST, confirmations = 0)
+		Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__, limit, confirmations)
 	end
 
 	def self.get_unconfirmed_tx(api_code = nil)
-		params = { 'format' => 'json' }
-		if !api_code.nil? then params['api_code'] = api_code end
-		resource = 'unconfirmed-transactions'
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return JSON.parse(response)['txs'].map{ |t| Transaction.new(t) }
+		Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__)
 	end
 
 	def self.get_blocks(api_code = nil, time: nil, pool_name: nil)
-		params = { 'format' => 'json' }
-		if !api_code.nil? then params['api_code'] = api_code end
-		resource = "blocks/"
-		if !time.nil?
-			resource += time.to_s
-		elsif !pool_name.nil?
-			resource += pool_name
-		end
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return JSON.parse(response)['blocks'].map{ |b| SimpleBlock.new(b) }
+		Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__, time, pool_name)
 	end
-	
+
 	def self.get_latest_block(api_code = nil)
-		params = {}
-		if !api_code.nil? then params['api_code'] = api_code end
-		resource = 'latestblock'
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return LatestBlock.new(JSON.parse(response))
-	end
-	
-	def self.get_inventory_data(hash, api_code = nil)
-		params = { 'format' => 'json' }
-		if !api_code.nil? then params['api_code'] = api_code end
-		resource = "inv/#{hash}"
-		response = Blockchain::call_api(resource, method: 'get', data: params)
-		return InventoryData.new(JSON.parse(response))
+		Blockchain::BlockExplorer.new(nil, api_code).proxy(__method__)
 	end
 
 	class SimpleBlock
@@ -82,7 +171,7 @@ module Blockchain
 		attr_reader :hash
 		attr_reader :time
 		attr_reader :main_chain
-		
+
 		def initialize(b)
 			@height = b['height']
 			@hash = b['hash']
@@ -97,7 +186,7 @@ module Blockchain
 		attr_reader :block_index
 		attr_reader :height
 		attr_reader :tx_indexes
-		
+
 		def initialize(b)
 			@hash = b['hash']
 			@time = b['time']
@@ -115,7 +204,7 @@ module Blockchain
 		attr_reader :value
 		attr_reader :value_hex
 		attr_reader :confirmations
-		
+
 		def initialize(o)
 			@tx_hash = o['tx_hash']
 			@tx_index = o['tx_index']
@@ -135,17 +224,47 @@ module Blockchain
 		attr_reader :total_sent
 		attr_reader :final_balance
 		attr_reader :transactions
-		
+
 		def initialize(a)
-			@hash160 = a['hash160']
+			@hash160 = a['hash160'] == nil ? nil : a['hash160']
 			@address = a['address']
 			@n_tx = a['n_tx']
 			@total_received = a['total_received']
 			@total_sent = a['total_sent']
 			@final_balance = a['final_balance']
-			@transactions = a['txs'].map{ |tx| Transaction.new(tx) }
+			@transactions = a['txs'] == nil ? nil : a['txs'].map{ |tx| Transaction.new(tx) }
 		end
 	end
+
+    class MultiAddress
+        attr_reader :addresses
+        attr_reader :transactions
+
+        def initialize(ma)
+            @addresses = ma['addresses'].map{ |a| Address.new(a) }
+            @transactions = ma['txs'].map{ |tx| Transaction.new(tx) }
+        end
+    end
+
+    class Xpub < Address
+        attr_reader :change_index
+        attr_reader :account_index
+        attr_reader :gap_limit
+
+        def initialize(x)
+            addr = x['addresses'][0]
+            @change_index = addr['change_index']
+            @account_index = addr['account_index']
+            @gap_limit = addr['gap_limit']
+            @hash160 = addr['hash160'] == nil ? nil : addr['hash160']
+            @address = addr['address']
+			@n_tx = addr['n_tx']
+			@total_received = addr['total_received']
+			@total_sent = addr['total_sent']
+			@final_balance = addr['final_balance']
+			@transactions = addr['txs'] == nil ? nil : addr['txs'].map{ |tx| Transaction.new(tx) }
+        end
+    end
 
 	class Input
 		attr_reader :n
@@ -206,7 +325,7 @@ module Blockchain
 		attr_reader :size
 		attr_reader :inputs
 		attr_reader :outputs
-		
+
 		def initialize(t)
 			@double_spend = t.fetch('double_spend', false)
 			@block_height = t.fetch('block_height', false)
@@ -218,18 +337,18 @@ module Blockchain
 			@size = t['size']
 			@inputs = t['inputs'].map{ |i| Input.new(i) }
 			@outputs = t['out'].map{ |o| Output.new(o) }
-			
+
 			if @block_height.nil?
 				@block_height = -1
 			end
 		end
-		
+
 		def adjust_block_height(h)
 			@block_height = h
 		end
 	end
 
-		
+
 	class Block
 		attr_reader :hash
 		attr_reader :version
@@ -247,7 +366,7 @@ module Blockchain
 		attr_reader :received_time
 		attr_reader :relayed_by
 		attr_reader :transactions
-		
+
 		def initialize(b)
 			@hash = b['hash']
 			@version = b['ver']
@@ -268,31 +387,16 @@ module Blockchain
 			@transactions.each do |tx|
 				tx.adjust_block_height(@height)
 			end
-			
+
 			if @received_time.nil?
 				@received_time = @time
 			end
 		end
 	end
 
-	class InventoryData
-		attr_reader :hash
-		attr_reader :type
-		attr_reader :initial_time
-		attr_reader :initial_ip
-		attr_reader :nconnected
-		attr_reader :relayed_count
-		attr_reader :relayed_percent
-			
-		def initialize(i)
-			@hash = i['hash']
-			@type = i['type']
-			@initial_time = i['initial_time'].to_i
-			@initial_ip = i['initial_ip']
-			@nconnected = i['nconnected'].to_i
-			@relayed_count = i['relayed_count'].to_i
-			@relayed_percent = i['relayed_percent'].to_i
-		end
-	end
-		
+    module FilterType
+        ALL = 4
+        CONFIRMED_ONLY = 5
+        REMOVE_UNSPENDABLE = 6
+    end
 end
