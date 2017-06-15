@@ -26,7 +26,12 @@ module Blockchain
 
             request = nil
             if method == 'get'
-                url.query = data.nil? ? nil : URI.encode_www_form(data)
+                if url.request_uri != '/v2/receive'
+                    url.query = data.nil? ? nil : URI.encode_www_form(data)
+                elsif
+                    url.query = ""
+                    data.each { |k,v| url.query << "#{k}=#{v}&" }
+                end
                 request = Net::HTTP::Get.new(url.request_uri)
             elsif method == 'post'
                 request = Net::HTTP::Post.new(url.request_uri)
@@ -52,5 +57,4 @@ module Blockchain
             return response.body
 	    end
     end
-
 end
