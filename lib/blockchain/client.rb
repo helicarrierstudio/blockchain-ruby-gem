@@ -10,15 +10,17 @@ module Blockchain
         attr_reader :base_url
         attr_reader :api_code
 
-        def initialize(base_url = nil, api_code = nil)
+        def initialize(base_url = nil, api_code = nil, server_secret = nil)
             @base_url = base_url.nil? ? DEFAULT_BASE_URL : base_url
             @api_code = api_code
+            @server_secret = server_secret
         end
 
         class APIException < StandardError
 	    end
 
         def call_api(resource, method: 'get', data: nil)
+            data['serverSecret'] = @server_secret
             url = URI.parse(@base_url + resource)
             http = Net::HTTP.new(url.host, url.port)
             http.use_ssl = @base_url.start_with? 'https://'

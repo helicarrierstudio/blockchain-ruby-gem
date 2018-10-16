@@ -7,8 +7,8 @@ module Blockchain
 
         attr_reader :client
 
-		def initialize(identifier, password, url = 'http://localhost:3000/', second_password = nil, api_code = nil)
-            @client = Client.new(url, api_code)
+		def initialize(identifier, password, url = 'http://localhost:3000/', second_password = nil, api_code = nil, server_secret = nil)
+            @client = Client.new(url, api_code, server_secret)
             @identifier = identifier
 			@password = password
 			@second_password = second_password
